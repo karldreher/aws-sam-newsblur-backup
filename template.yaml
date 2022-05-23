@@ -1,0 +1,48 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: >
+  sam-newsblur-backup
+
+Globals:
+  Function:
+    Timeout: 10
+
+Resources:
+  NewsblurBackupFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: newsblur_backup/
+      Handler: app.lambda_handler
+      Runtime: python3.9
+      Architectures:
+        - x86_64
+      Policies:
+        - Statement:
+          - Sid: SSMDescribeParametersPolicy
+            Effect: Allow
+            Action:
+              - ssm:DescribeParameters
+            Resource: '*'
+          - Sid: SSMGetParameterPolicy
+            Effect: Allow
+            Action:
+            - ssm:GetParameters
+            - ssm:GetParameter
+            - ssm:GetParametersByPath
+            Resource: !Sub "arn:${AWS::Partition}:ssm:${AWS::Region}:${AWS::AccountId}:parameter/newsblur-backup/*"
+      Events:
+        WeeklySchedule:
+          Type: Schedule
+          Properties:
+            Name: scheduled-event
+            Schedule: rate(7 days)
+            Description: Scheduled invocation at 1 week interval
+            Enabled: True
+
+Outputs:
+  NewsblurBackupFunction:
+    Description: "Newsblur Backup Lambda Function ARN"
+    Value: !GetAtt NewsblurBackupFunction.Arn
+  NewsblurBackupIamRole:
+    Description: "Implicit IAM Role created for Newsblur Backup function"
+    Value: !GetAtt NewsblurBackupFunction.Arn
