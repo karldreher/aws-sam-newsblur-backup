@@ -1,4 +1,4 @@
-AWSTemplateFormatVersion: '2010-09-09'
+AWSTemplateFormatVersion: "2010-09-09"
 Transform: AWS::Serverless-2016-10-31
 Description: >
   sam-newsblur-backup
@@ -8,7 +8,7 @@ Globals:
     Timeout: 10
 
 Resources:
-  NewsblurBackupFunction:
+  LambdaFunction:
     Type: AWS::Serverless::Function
     Properties:
       CodeUri: newsblur_backup/
@@ -18,18 +18,18 @@ Resources:
         - x86_64
       Policies:
         - Statement:
-          - Sid: SSMDescribeParametersPolicy
-            Effect: Allow
-            Action:
-              - ssm:DescribeParameters
-            Resource: '*'
-          - Sid: SSMGetParameterPolicy
-            Effect: Allow
-            Action:
-            - ssm:GetParameters
-            - ssm:GetParameter
-            - ssm:GetParametersByPath
-            Resource: !Sub "arn:${AWS::Partition}:ssm:${AWS::Region}:${AWS::AccountId}:parameter/newsblur-backup/*"
+            - Sid: SSMDescribeParametersPolicy
+              Effect: Allow
+              Action:
+                - ssm:DescribeParameters
+              Resource: "*"
+            - Sid: SSMGetParameterPolicy
+              Effect: Allow
+              Action:
+                - ssm:GetParameters
+                - ssm:GetParameter
+                - ssm:GetParametersByPath
+              Resource: !Sub "arn:${AWS::Partition}:ssm:${AWS::Region}:${AWS::AccountId}:parameter/newsblur-backup/*"
       Events:
         WeeklySchedule:
           Type: Schedule
@@ -44,24 +44,24 @@ Resources:
     Properties:
       AccessControl: Private
       BucketEncryption:
-          ServerSideEncryptionConfiguration:
-            -   BucketKeyEnabled: True
+        ServerSideEncryptionConfiguration:
+          - BucketKeyEnabled: True
       BucketName: newsblur-backup
       LifecycleConfiguration:
         Rules:
-        - Id: GlacierRule
-          Status: Enabled
-          ExpirationInDays: 180
-          Transitions:
-            - TransitionInDays: 7
-              StorageClass: GLACIER
+          - Id: GlacierRule
+            Status: Enabled
+            ExpirationInDays: 180
+            Transitions:
+              - TransitionInDays: 7
+                StorageClass: GLACIER
       VersioningConfiguration:
         Status: Enabled
 
 Outputs:
   NewsblurBackupFunction:
     Description: "Newsblur Backup Lambda Function ARN"
-    Value: !GetAtt NewsblurBackupFunction.Arn
+    Value: !GetAtt LambdaFunction.Arn
   NewsblurBackupIamRole:
     Description: "Implicit IAM Role created for Newsblur Backup function"
-    Value: !GetAtt NewsblurBackupFunction.Arn
+    Value: !GetAtt LambdaFunction.Arn
