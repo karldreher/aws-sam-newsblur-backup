@@ -39,6 +39,25 @@ Resources:
             Description: Scheduled invocation at 1 week interval
             Enabled: True
 
+  S3Bucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      AccessControl: Private
+      BucketEncryption:
+          ServerSideEncryptionConfiguration:
+            -   BucketKeyEnabled: True
+      BucketName: newsblur-backup
+      LifecycleConfiguration:
+        Rules:
+        - Id: GlacierRule
+          Status: Enabled
+          ExpirationInDays: 180
+          Transitions:
+            - TransitionInDays: 7
+              StorageClass: GLACIER
+      VersioningConfiguration:
+        Status: Enabled
+
 Outputs:
   NewsblurBackupFunction:
     Description: "Newsblur Backup Lambda Function ARN"
