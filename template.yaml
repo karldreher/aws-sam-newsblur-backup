@@ -48,7 +48,7 @@ Resources:
                 - s3:PutObject
                 - s3:PutObjectAcl
                 - s3:PutLifecycleConfiguration
-              Resource: !GetAtt S3Bucket.Arn
+              Resource: !Join ["",[!GetAtt S3Bucket.Arn,"/*"]]
 
   S3Bucket:
     Type: AWS::S3::Bucket
@@ -68,26 +68,6 @@ Resources:
                 StorageClass: GLACIER
       VersioningConfiguration:
         Status: Enabled
-
-  BucketPolicy:
-    Type: AWS::S3::BucketPolicy
-    Properties:
-      Bucket:
-        Ref: S3Bucket
-      PolicyDocument:
-        Statement:
-          - Action:
-                - s3:PutObject
-                - s3:PutObjectAcl
-                - s3:PutLifecycleConfiguration
-            Effect: "Allow"
-            Resource:
-              Fn::Join:
-                - ""
-                - - "arn:aws:s3:::"
-                  - Ref: S3Bucket
-                  - "/*"
-            Principal: NewsblurBackupFunction.Arn
 
 Outputs:
   NewsblurBackupFunction:

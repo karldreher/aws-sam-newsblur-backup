@@ -35,7 +35,7 @@ def backup_opml(session):
     opml = session.get("https://www.newsblur.com/import/opml_export")
     print("OPML downloaded in " + str(opml.elapsed))
     with io.BytesIO() as f:
-        f.write(str(opml.text))
+        f.write(str(opml.text).encode('utf-8'))
         f.seek(0)
         s3.upload_fileobj(f, BUCKET_NAME, 'opml.xml')
 
