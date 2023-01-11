@@ -1,12 +1,14 @@
-import json
 import os
+import io
 import requests
 import boto3
 
 ssm = boto3.client('ssm')
+s3 = boto3.client('s3')
 
 USERNAME = ssm.get_parameter(Name='/newsblur-backup/username', WithDecryption=True)
 PASSWORD = ssm.get_parameter(Name='/newsblur-backup/password', WithDecryption=True)
+BUCKET_NAME = os.environ.get('BUCKET_NAME')
 loginParams = {"username": USERNAME["Parameter"]["Value"], "password": PASSWORD["Parameter"]["Value"]}
 
 
@@ -22,15 +24,20 @@ def backup_starred_stories(session):
     starred_stories = session.get("https://www.newsblur.com/reader/starred_stories")
     print("Starred stories downloaded in " + str(starred_stories.elapsed))
     #todo: put this in S3
-    outfile.write(str(starred_stories.json()))
+    with io.BytesIO() as f:
+        f.write(str(starred_stories.json()).encode('utf-8'))
+        f.seek(0)
+        s3.upload_fileobj(f, BUCKET_NAME, 'starred_stories.json')
+
 
 
 def backup_opml(session):
     opml = session.get("https://www.newsblur.com/import/opml_export")
     print("OPML downloaded in " + str(opml.elapsed))
-    #todo: put this in S3
-    print(opml.text)
-
+    with io.BytesIO() as f:
+        f.write(str(opml.text))
+        f.seek(0)
+        s3.upload_fileobj(f, BUCKET_NAME, 'opml.xml')
 
 
 
@@ -40,5 +47,3 @@ def lambda_handler(event, context):
         backup_starred_stories(s)
         backup_opml(s)
         s.close()
-
-

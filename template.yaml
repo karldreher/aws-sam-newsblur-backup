@@ -14,22 +14,11 @@ Resources:
       CodeUri: newsblur_backup/
       Handler: app.lambda_handler
       Runtime: python3.9
+      Environment:
+        Variables:
+          BUCKET_NAME: !Ref S3Bucket
       Architectures:
         - x86_64
-      Policies:
-        - Statement:
-            - Sid: SSMDescribeParametersPolicy
-              Effect: Allow
-              Action:
-                - ssm:DescribeParameters
-              Resource: "*"
-            - Sid: SSMGetParameterPolicy
-              Effect: Allow
-              Action:
-                - ssm:GetParameters
-                - ssm:GetParameter
-                - ssm:GetParametersByPath
-              Resource: !Sub "arn:${AWS::Partition}:ssm:${AWS::Region}:${AWS::AccountId}:parameter/newsblur-backup/*"
       Events:
         WeeklySchedule:
           Type: Schedule
@@ -38,6 +27,28 @@ Resources:
             Schedule: rate(7 days)
             Description: Scheduled invocation at 1 week interval
             Enabled: True
+
+      Policies:
+        - Statement:
+            - Effect: Allow
+              Action: ssm:DescribeParameters
+              Resource: "*"
+
+            - Sid: SSMGetParameterPolicy
+              Effect: Allow
+              Action:
+                - ssm:GetParameters
+                - ssm:GetParameter
+                - ssm:GetParametersByPath
+              Resource: !Sub "arn:${AWS::Partition}:ssm:${AWS::Region}:${AWS::AccountId}:parameter/newsblur-backup/*"
+
+            - Sid: S3BucketAccessPolicy
+              Effect: Allow
+              Action:
+                - s3:PutObject
+                - s3:PutObjectAcl
+                - s3:PutLifecycleConfiguration
+              Resource: !GetAtt S3Bucket.Arn
 
   S3Bucket:
     Type: AWS::S3::Bucket
@@ -58,10 +69,27 @@ Resources:
       VersioningConfiguration:
         Status: Enabled
 
+  BucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket:
+        Ref: S3Bucket
+      PolicyDocument:
+        Statement:
+          - Action:
+                - s3:PutObject
+                - s3:PutObjectAcl
+                - s3:PutLifecycleConfiguration
+            Effect: "Allow"
+            Resource:
+              Fn::Join:
+                - ""
+                - - "arn:aws:s3:::"
+                  - Ref: S3Bucket
+                  - "/*"
+            Principal: NewsblurBackupFunction.Arn
+
 Outputs:
   NewsblurBackupFunction:
     Description: "Newsblur Backup Lambda Function ARN"
-    Value: !GetAtt LambdaFunction.Arn
-  NewsblurBackupIamRole:
-    Description: "Implicit IAM Role created for Newsblur Backup function"
     Value: !GetAtt LambdaFunction.Arn
